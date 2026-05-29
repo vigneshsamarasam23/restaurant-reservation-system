@@ -10,14 +10,18 @@ function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
-    const success = login(email, password);
+    const result = await login(email, password);
 
-    if (success) {
+    if (result.success) {
       navigate("/");
+    } else {
+      setError(result.message || "Login failed");
     }
   };
 
@@ -40,6 +44,8 @@ function Login() {
             placeholder="Password"
             onChange={(e) => setPassword(e.target.value)}
           />
+
+          {error && <p className="text-sm text-red-600">{error}</p>}
 
           <Button type="submit" className="w-full">
             Login

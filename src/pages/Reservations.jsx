@@ -1,5 +1,5 @@
-import { useState } from "react";
-import tablesData from "../data/tablesData";
+import { useState, useEffect } from "react";
+import { fetchTables } from "../services/api";
 import TableCard from "../components/TableCard";
 import { useReservations } from "../context/ReservationContext";
 import { useAuth } from "../context/AuthContext";
@@ -10,17 +10,35 @@ import Card from "../components/ui/Card";
 function Reservations() {
   const { user } = useAuth();
   const { reservations, addReservation, cancelReservation } = useReservations();
+  const [tables, setTables] = useState([]);
+  const [tablesLoading, setTablesLoading] = useState(true);
   const [selectedTable, setSelectedTable] = useState(null);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
 
-  const handleReserve = () => {
+  useEffect(() => {
+    const loadTables = async () => {
+      try {
+        setTablesLoading(true);
+        const data = await fetchTables();
+        setTables(data);
+      } catch (error) {
+        console.error("Error fetching tables:", error);
+      } finally {
+        setTablesLoading(false);
+      }
+    };
+
+    loadTables();
+  }, []);
+
+  const handleReserve = async () => {
     if (!selectedTable || !date || !time) {
       alert("Please fill all fields");
       return;
     }
 
-    const result = addReservation({
+    const result = await addReservation({
       tableId: selectedTable.id,
       tableNumber: selectedTable.tableNumber,
       seats: selectedTable.seats,
@@ -75,13 +93,21 @@ function Reservations() {
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  {tablesData.map((table) => (
-                    <TableCard
-                      key={table.id}
-                      table={table}
-                      onReserve={setSelectedTable}
-                    />
-                  ))}
+                  {tablesLoading ? (
+                    <p className="text-sm text-slate-600">Loading tables...</p>
+                  ) : tables.length > 0 ? (
+                    tables.map((table) => (
+                      <TableCard
+                        key={table.id}
+                        table={table}
+                        onReserve={setSelectedTable}
+                      />
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-600">
+                      No tables available
+                    </p>
+                  )}
                 </div>
               </div>
             </Card>

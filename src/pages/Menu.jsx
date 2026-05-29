@@ -1,7 +1,49 @@
-import menuData from "../data/menuData";
+import { useEffect, useState } from "react";
 import MenuCard from "../components/MenuCard";
+import { fetchMenu } from "../services/api";
 
 function Menu() {
+  const [menu, setMenu] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const loadMenu = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchMenu();
+        setMenu(data);
+      } catch (err) {
+        console.error("Error fetching menu:", err);
+        setError("Failed to load menu");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadMenu();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="px-6 py-10 sm:px-8 lg:px-12">
+        <div className="mx-auto max-w-7xl">
+          <p className="text-center text-slate-600">Loading menu...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="px-6 py-10 sm:px-8 lg:px-12">
+        <div className="mx-auto max-w-7xl">
+          <p className="text-center text-red-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="px-6 py-10 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-7xl">
@@ -16,7 +58,7 @@ function Menu() {
         </header>
 
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {menuData.map((item) => (
+          {menu.map((item) => (
             <MenuCard key={item.id} item={item} />
           ))}
         </div>

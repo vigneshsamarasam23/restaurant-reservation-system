@@ -1,50 +1,65 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import {
+  fetchReservations,
+  createReservation as createReservationAPI,
+  cancelReservation as cancelReservationAPI,
+} from "../services/api";
+import { useAuth } from "./AuthContext";
 
 const ReservationContext = createContext();
 
 export function ReservationProvider({ children }) {
-  const [reservations, setReservations] = useState(() => {
-    const savedReservations = localStorage.getItem("reservations");
+  const { user } = useAuth();
+  const [reservations, setReservations] = useState([]);
 
-    return savedReservations ? JSON.parse(savedReservations) : [];
-  });
-
+  // Fetch reservations when user changes
   useEffect(() => {
-    localStorage.setItem("reservations", JSON.stringify(reservations));
-  }, [reservations]);
-
-  const addReservation = (reservation) => {
-    const alreadyBooked = reservations.find(
-      (item) =>
-        item.tableId === reservation.tableId &&
-        item.date === reservation.date &&
-        item.time === reservation.time,
-    );
-
-    if (alreadyBooked) {
-      return {
-        success: false,
-        message: "Table already booked for this time.",
-      };
+    if (user && user.email) {
+      fetchUserReservations();
+    } else {
+      setReservations([]);
     }
+  }, [user]);
 
-    setReservations((prev) => [
-      ...prev,
-      {
-        ...reservation,
-        id: Date.now(),
-      },
-    ]);
-
-    return {
-      success: true,
-    };
+  const fetchUserReservations = async () => {
+    try {
+      const data = await fetchReservations(user.email);
+      setReservations(data);
+    } catch (error) {
+      console.error("Error fetching reservations:", error);
+    }
   };
 
-  const cancelReservation = (id) => {
-    setReservations((prev) =>
-      prev.filter((reservation) => reservation.id !== id),
-    );
+  const addReservation = async (reservation) => {
+    try {
+      const response = await createReservationAPI(reservation);
+      if (response.success) {
+        setReservations((prev) => [...prev, response.reservation]);
+        return { success: true };
+      } else {
+        return {
+          success: false,
+          message: response.message || "Reservation failed",
+        };
+      }
+    } catch (error) {
+      console.error("Error creating reservation:", error);
+      return {
+        success: false,
+        message: error.message || "Reservation failed",
+      };
+    }
+  };
+
+  const cancelReservation = async (id) => {
+    try {
+      await cancelReservationAPI(id);
+      setReservations((prev) =>
+        prev.filter((reservation) => reservation.id !== id),
+      );
+    } catch (error) {
+      console.error("Error canceling reservation:", error);
+    }
   };
 
   return (
