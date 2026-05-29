@@ -1,4 +1,8 @@
 import { createContext, useContext, useState } from "react";
+import {
+  authLogin as authLoginAPI,
+  authSignup as authSignupAPI,
+} from "../services/api";
 
 const AuthContext = createContext();
 
@@ -9,29 +13,28 @@ export function AuthProvider({ children }) {
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
-  const login = (email, password) => {
-    // Mock authentication
-    const mockUser = {
-      id: 1,
-      name: "Vignesh",
-      email,
-    };
-
-    setUser(mockUser);
-    localStorage.setItem("user", JSON.stringify(mockUser));
-    return true;
+  const login = async (email, password) => {
+    try {
+      const response = await authLoginAPI(email, password);
+      setUser(response.user);
+      localStorage.setItem("user", JSON.stringify(response.user));
+      return { success: true, user: response.user };
+    } catch (error) {
+      console.error("Login error:", error);
+      return { success: false, message: error.message || "Login failed" };
+    }
   };
 
-  const signup = (name, email, password) => {
-    const mockUser = {
-      id: Date.now(),
-      name,
-      email,
-    };
-
-    setUser(mockUser);
-    localStorage.setItem("user", JSON.stringify(mockUser));
-    return true;
+  const signup = async (name, email, password) => {
+    try {
+      const response = await authSignupAPI(name, email, password);
+      setUser(response.user);
+      localStorage.setItem("user", JSON.stringify(response.user));
+      return { success: true, user: response.user };
+    } catch (error) {
+      console.error("Signup error:", error);
+      return { success: false, message: error.message || "Signup failed" };
+    }
   };
 
   const logout = () => {

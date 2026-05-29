@@ -12,14 +12,18 @@ function Signup() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
-    const success = signup(name, email, password);
+    const result = await signup(name, email, password);
 
-    if (success) {
+    if (result.success) {
       navigate("/");
+    } else {
+      setError(result.message || "Signup failed");
     }
   };
 
@@ -48,6 +52,8 @@ function Signup() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
+
+        {error && <p className="text-sm text-red-600">{error}</p>}
 
         <Button type="submit">Sign Up</Button>
       </form>
